@@ -4,34 +4,53 @@ const knex = require('../db/knex');
 
 router.get('/', function (req, res, next) {
   const isAuth = req.isAuthenticated();
+  const showGrouped = req.query.grouped === '1'; // ?grouped=1 でグループ表示
+
   let myTasksPromise = Promise.resolve([]);
   if (isAuth) {
     const userId = req.user.id;
     myTasksPromise = knex("tasks")
       .join("users", "tasks.user_id", "users.id")
       .select("tasks.*", "users.name")
-      .where({ "tasks.user_id": userId });
+      .where({ "tasks.user_id": userId })
+      .orderBy("tasks.created_at", "desc"); // 追加: 新しい順
   }
-  // 全ユーザーのタスク
+
   const allTasksPromise = knex("tasks")
     .join("users", "tasks.user_id", "users.id")
-    .select("tasks.*", "users.name");
+    .select("tasks.*", "users.name")
+    .orderBy("tasks.created_at", "desc");
 
   Promise.all([myTasksPromise, allTasksPromise])
-  .then(function ([myTasks, allTasks]) {
-    // ユーザーごとにタスクをまとめる
-    const groupedTodos = {};
-    allTasks.forEach(todo => {
-      if (!groupedTodos[todo.name]) groupedTodos[todo.name] = [];
-      groupedTodos[todo.name].push(todo);
+    .then(function ([myTasks, allTasks]) {
+      let groupedTodos = {};
+      if (showGrouped) {
+        allTasks.forEach(todo => {
+          if (!groupedTodos[todo.name]) groupedTodos[todo.name] = [];
+          groupedTodos[todo.name].push(todo);
+        });
+      }
+      res.render('index', {
+        title: 'Practice',
+        isAuth: isAuth,
+        todos: myTasks,
+        groupedTodos: showGrouped ? groupedTodos : null,
+        allTodos: showGrouped ? null : allTasks,
+        showGrouped: showGrouped,
+      });
+    })
+    .catch(function (err) {
+      console.error(err);
+      res.render('index', {
+        title: 'Practice',
+        isAuth: isAuth,
+        todos: [],
+        groupedTodos: {},
+        allTodos: [],
+        showGrouped: showGrouped,
+        errorMessage: [err.sqlMessage],
+      });
     });
-    res.render('index', {
-      title: 'ToDo App',
-      isAuth: isAuth,
-      todos: myTasks,
-      groupedTodos: groupedTodos, // 追加
-    });
-  })
 });
 
 
@@ -49,7 +68,7 @@ router.post('/', function (req, res, next) {
     .catch(function (err) {
       console.error(err);
       res.render('index', {
-        title: 'ToDo App',
+        title: 'Practice',
         isAuth: isAuth,
         todos: [],
         groupedTodos: {},

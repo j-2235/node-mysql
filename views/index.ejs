@@ -4,61 +4,109 @@
   <title><%= title %></title>
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
         integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+  <style>
+    .todo-list li {
+      margin-bottom: 0.5em;
+      padding: 0.5em;
+      background: #f8f9fa;
+      border-radius: 4px;
+      border: 1px solid #e2e3e5;
+    }
+    .user-section {
+      margin-bottom: 1.5em;
+      padding-bottom: 1em;
+      border-bottom: 1px solid #dee2e6;
+    }
+    .todo-meta {
+      font-size: 0.9em;
+      color: #888;
+    }
+    .todo-content {
+      font-weight: bold;
+    }
+  </style>
 </head>
 <body>
 <%- include('./header'); %>
 <%- include('./error_messages'); %>
 <% if(isAuth) { %>
- <div class="container">
+ <div class="container mt-4">
   <div class="row">
     <div class="col-md-6">
-      <form action="/" method="post">
-  <label>自主練習の記録</label>
-  <input required type="text" name="add" placeholder="何した？"/>
-  <input required type="number" name="duration" min="1" placeholder="時間(分)"/>
-  <input class="btn btn-primary" type="submit" value="追加"/>
-</form>
-      <h5>自分の自主練習状況</h5>
-      <ul>
-  <% for(let todo of todos){ %>
-    <li>
-      <span><%= todo.content %></span>
-      <small class="text-muted">
-        <% if (todo.duration) { %>
-          （<%= todo.duration %>分）
+      <form action="/" method="post" class="mb-4">
+        <label class="font-weight-bold">自主練習の記録</label>
+        <input required type="text" name="add" class="form-control mb-2" placeholder="何した？"/>
+        <input required type="number" name="duration" min="1" class="form-control mb-2" placeholder="時間(分)"/>
+        <input class="btn btn-primary" type="submit" value="追加"/>
+      </form>
+      <h5 class="mb-3">自分の自主練習状況</h5>
+      <ul class="todo-list list-unstyled">
+        <% for(let todo of todos){ %>
+          <li>
+            <span class="todo-content"><%= todo.content %></span>
+            <% if (todo.duration) { %>
+              <span class="todo-meta">（<%= todo.duration %>分）</span>
+            <% } %>
+            <% if (todo.created_at) { %>
+              <br>
+              <span class="todo-meta"><%= new Date(todo.created_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) %></span>
+            <% } %>
+          </li>
         <% } %>
-      </small>
-    </li>
-  <% } %>
-</ul>
+      </ul>
     </div>
     <div class="col-md-6">
-  <h5>全ユーザーの自主練習状況</h5>
-  <% if (groupedTodos) { %>
+  <h5 class="mb-3">全ユーザーの自主練習状況</h5>
+  <!-- 表示切替ボタン -->
+  <div class="mb-3">
+    <a href="/?grouped=1" class="btn btn-outline-primary btn-sm <% if (showGrouped) { %>active<% } %>">ユーザーごとに表示</a>
+    <a href="/" class="btn btn-outline-secondary btn-sm <% if (!showGrouped) { %>active<% } %>">全件リスト表示</a>
+  </div>
+  <% if (showGrouped && groupedTodos) { %>
     <% Object.keys(groupedTodos).forEach(function(userName) { %>
-  <strong><%= userName %></strong>
-  <ul>
-    <% groupedTodos[userName].forEach(function(todo) { %>
-      <li>
-        <%= todo.content %>
-        <% if (todo.duration) { %>
-          <small class="text-muted">（<%= todo.duration %>分）</small>
-        <% } %>
-        <br>
-        <small class="text-muted">
-          <%= todo.created_at ? new Date(todo.created_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '' %>
-        </small>
-      </li>
+      <div class="user-section">
+        <strong><%= userName %></strong>
+        <ul class="todo-list list-unstyled">
+          <% groupedTodos[userName].forEach(function(todo) { %>
+            <li>
+              <span class="todo-content"><%= todo.content %></span>
+              <% if (todo.duration) { %>
+                <span class="todo-meta">（<%= todo.duration %>分）</span>
+              <% } %>
+              <% if (todo.created_at) { %>
+                <br>
+                <span class="todo-meta"><%= new Date(todo.created_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) %></span>
+              <% } %>
+            </li>
+          <% }); %>
+        </ul>
+      </div>
     <% }); %>
-  </ul>
-<% }); %>
+  <% } else if (allTodos) { %>
+    <ul class="todo-list list-unstyled">
+      <% allTodos.forEach(function(todo) { %>
+        <li>
+          <span class="todo-content"><%= todo.content %></span>
+          <span class="todo-meta">（<%= todo.name %>）</span>
+          <% if (todo.duration) { %>
+            <span class="todo-meta">（<%= todo.duration %>分）</span>
+          <% } %>
+          <% if (todo.created_at) { %>
+            <br>
+            <span class="todo-meta"><%= new Date(todo.created_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) %></span>
+          <% } %>
+        </li>
+      <% }); %>
+    </ul>
   <% } %>
 </div>
   </div>
 </div>
 <% } else { %>
-  <h1>Welcome to the TodoApp</h1>
-<a class="btn btn-primary" href="/signup" role="button">Sign up now!</a>
+  <div class="container mt-5 text-center">
+    <h1 class="mb-4">Welcome to the TodoApp</h1>
+    <a class="btn btn-primary btn-lg" href="/signup" role="button">Sign up now!</a>
+  </div>
 <% } %>
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
