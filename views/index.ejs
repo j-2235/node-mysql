@@ -9,22 +9,51 @@
 <%- include('./header'); %>
 <%- include('./error_messages'); %>
 <% if(isAuth) { %>
-  <div class="container">
+ <div class="container">
   <div class="row">
     <div class="col-md-6">
       <form action="/" method="post">
-        <label>タスクの追加</label>
-        <input required type="text" name="add" placeholder="何をする?"/>
-        <input class="btn btn-primary" type="submit" value="追加"/>
-      </form>
+  <label>自主練習の記録</label>
+  <input required type="text" name="add" placeholder="何した？"/>
+  <input required type="number" name="duration" min="1" placeholder="時間(分)"/>
+  <input class="btn btn-primary" type="submit" value="追加"/>
+</form>
+      <h5>自分の自主練習状況</h5>
+      <ul>
+  <% for(let todo of todos){ %>
+    <li>
+      <span><%= todo.content %></span>
+      <small class="text-muted">
+        <% if (todo.duration) { %>
+          （<%= todo.duration %>分）
+        <% } %>
+      </small>
+    </li>
+  <% } %>
+</ul>
     </div>
     <div class="col-md-6">
-      <ul>
-        <% for(let todo of todos){ %>
-          <li><span><%= todo.content %></span></li>
+  <h5>全ユーザーの自主練習状況</h5>
+  <% if (groupedTodos) { %>
+    <% Object.keys(groupedTodos).forEach(function(userName) { %>
+  <strong><%= userName %></strong>
+  <ul>
+    <% groupedTodos[userName].forEach(function(todo) { %>
+      <li>
+        <%= todo.content %>
+        <% if (todo.duration) { %>
+          <small class="text-muted">（<%= todo.duration %>分）</small>
         <% } %>
-      </ul>
-    </div>
+        <br>
+        <small class="text-muted">
+          <%= todo.created_at ? new Date(todo.created_at).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) : '' %>
+        </small>
+      </li>
+    <% }); %>
+  </ul>
+<% }); %>
+  <% } %>
+</div>
   </div>
 </div>
 <% } else { %>
