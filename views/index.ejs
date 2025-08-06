@@ -56,6 +56,34 @@
       </ul>
     </div>
     <div class="col-md-6">
+
+  <h5 class="mb-3">ユーザーごとの合計練習時間</h5>
+
+
+    <canvas id="practiceHistogram" width="400" height="200"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    const ctx = document.getElementById('practiceHistogram').getContext('2d');
+    const labels = <%- JSON.stringify(practiceSums.map(s => s.name)) %>;
+    const data = <%- JSON.stringify(practiceSums.map(s => Number(s.total_duration))) %>;
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '合計練習時間（分）',
+          data: data,
+          backgroundColor: 'rgba(54, 162, 235, 0.5)'
+        }]
+      },
+      options: {
+        scales: {
+          y: { beginAtZero: true }
+        }
+      }
+    });
+  </script>
+
   <h5 class="mb-3">全ユーザーの自主練習状況</h5>
   <!-- 表示切替ボタン -->
   <div class="mb-3">
