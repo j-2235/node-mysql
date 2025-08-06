@@ -13,7 +13,7 @@ router.get('/', function (req, res, next) {
       .join("users", "tasks.user_id", "users.id")
       .select("tasks.*", "users.name")
       .where({ "tasks.user_id": userId })
-      .orderBy("tasks.created_at", "desc"); // 追加: 新しい順
+      .orderBy("tasks.created_at", "desc");
   }
 
   const allTasksPromise = knex("tasks")
@@ -21,24 +21,32 @@ router.get('/', function (req, res, next) {
     .select("tasks.*", "users.name")
     .orderBy("tasks.created_at", "desc");
 
-  Promise.all([myTasksPromise, allTasksPromise])
-    .then(function ([myTasks, allTasks]) {
-      let groupedTodos = {};
-      if (showGrouped) {
-        allTasks.forEach(todo => {
-          if (!groupedTodos[todo.name]) groupedTodos[todo.name] = [];
-          groupedTodos[todo.name].push(todo);
-        });
-      }
-      res.render('index', {
-        title: 'Practice',
-        isAuth: isAuth,
-        todos: myTasks,
-        groupedTodos: showGrouped ? groupedTodos : null,
-        allTodos: showGrouped ? null : allTasks,
-        showGrouped: showGrouped,
+  // 追加: ユーザーごとの練習時間合計
+  const practiceSumPromise = knex("tasks")
+    .join("users", "tasks.user_id", "users.id")
+    .select("users.name")
+    .sum("tasks.duration as total_duration")
+    .groupBy("users.name");
+
+Promise.all([myTasksPromise, allTasksPromise, practiceSumPromise])
+  .then(function ([myTasks, allTasks, practiceSums]) {
+    let groupedTodos = {};
+    if (showGrouped) {
+      allTasks.forEach(todo => {
+        if (!groupedTodos[todo.name]) groupedTodos[todo.name] = [];
+        groupedTodos[todo.name].push(todo);
       });
-    })
+    }
+    res.render('index', {
+      title: 'Practice',
+      isAuth: isAuth,
+      todos: myTasks,
+      groupedTodos: showGrouped ? groupedTodos : null,
+      allTodos: showGrouped ? null : allTasks,
+      showGrouped: showGrouped,
+      practiceSums: practiceSums, // 追加
+    });
+  })
     .catch(function (err) {
       console.error(err);
       res.render('index', {
